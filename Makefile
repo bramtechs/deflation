@@ -1,11 +1,11 @@
 deflate: deflate_cli.c
-	gcc deflate_cli.c -o deflate -DEFLATION_TEST -DEFLATION_VERBOSE -DEFLATION_IMPLEMENTATION
+	gcc -ggdb deflate_cli.c -o deflate -DEFLATION_TEST -DEFLATION_VERBOSE
 
 clean:
 	rm deflate
 
 test: deflate
-	./deflate
+	./deflate example example.def
 
 install: deflate
 	cp deflate /usr/bin/deflate
