@@ -4,7 +4,7 @@ deflate: deflate_cli.c
 clean:
 	rm deflate
 
-test: deflate
+check: deflate
 	./deflate example example.def
 
 install: deflate
