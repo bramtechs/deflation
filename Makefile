@@ -1,4 +1,4 @@
-deflate: deflate_cli.c
+deflate: deflate_cli.c deflation.h
 	gcc -ggdb deflate_cli.c -o deflate -DEFLATION_TEST -DEFLATION_VERBOSE
 
 clean:
