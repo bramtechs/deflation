@@ -33,7 +33,7 @@ void embed_asset_folder(const char* folder, const char* output_file);
 static const char** supported_formats
     = { ".png", ".mpg", ".comps", ".obj", ".mtl", ".wav", ".mp3", ".ogg", ".pal", ".fs", ".vs", ".wav", ".ttf", ".mpeg" };
 
-void embed_asset_folder(const char* folder, const char* output_file)
+void deflate_folder(const char* folder, const char* output_file)
 {
     DEBUG("Embedded folder %s to %s", folder, output_file);
 }

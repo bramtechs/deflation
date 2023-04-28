@@ -1,8 +1,15 @@
-deflation: deflation.h
-	gcc deflation_cli.c -o deflation -DEFLATION_TEST -DEFLATION_VERBOSE -DEFLATION_IMPLEMENTATION
+deflate: deflate_cli.c
+	gcc deflate_cli.c -o deflate -DEFLATION_TEST -DEFLATION_VERBOSE -DEFLATION_IMPLEMENTATION
 
 clean:
-	rm deflation
+	rm deflate
 
-run: deflation
-	./deflation
+test: deflate
+	./deflate
+
+install: deflate
+	cp deflate /usr/bin/deflate
+
+remove:
+	rm -f /usr/bin/deflate
+
