@@ -10,6 +10,9 @@ check: deflate
 check2: deflate
 	./deflate ~/dev/basalt/assets example.def
 
+check3: deflate
+	./deflate ~/dev/basalt example.def
+
 install: deflate
 	cp deflate /usr/bin/deflate
 

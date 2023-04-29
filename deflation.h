@@ -4,6 +4,7 @@
 
 #ifndef DEFLATION_H
 #define DEFLATION_H
+#define DEFLATION
 
 #define DEFLATION_VERBOSE
 
@@ -16,14 +17,15 @@ typedef struct RawAsset {
     char data[];
 } RawAsset;
 
-int deflate_folder(const char* folder, const char* output_file);  // NOTE: Deflates the given folder into an output package.
-                                                                  // Always recursive for convenience, returns 1 on success
+DEFLATION int deflate_folder(const char* folder, const char* output_file);  // NOTE: Deflates the given folder into an output package.
+                                                                            // Always recursive for convenience, returns 1 on success
 
 #ifdef DEFLATION_IMPLEMENTATION
 # include <stdio.h>
 # include <stdbool.h>
 # include <dirent.h>
 # include <string.h>
+# include <assert.h>
 # include <sys/stat.h>
 
 # define SUCCESS 1
@@ -56,13 +58,20 @@ typedef struct FilePathList {
     size_t capacity;
 } FilePathList;
 
+#define CACHE_MAX_SIZE (10240)
+typedef struct FileBuffer {
+    size_t cache_size;
+    char* cache;
+    FILE* file;
+} FileBuffer;
+
 static const char* supported_formats[]
     = { ".png", ".mpg", ".comps", ".obj", ".mtl", ".wav", ".mp3", ".ogg", ".pal", ".fs", ".vs", ".wav", ".ttf", ".mpeg" };
 
 void filepathlist_append(FilePathList* list, const char* folder)
 {
     if (list->files == NULL) {
-        list->capacity = 2;
+        list->capacity = 500;
         list->files = malloc(list->capacity*sizeof(const char*));
     }
 
@@ -115,7 +124,55 @@ void crawl_folder(FilePathList* list, const char* folder)
     closedir(dir);
 }
 
-int deflate_folder(const char* folder, const char* output_file)
+static void filebuffer_flush(FileBuffer* buffer)
+{
+    buffer->cache_size = 0;
+    fputs(buffer->cache, buffer->file);
+    assert(buffer->cache_size < CACHE_MAX_SIZE);
+    fwrite(buffer->cache, buffer->cache_size, 1, buffer->file);
+}
+
+static FileBuffer* filebuffer_open(const char* file)
+{
+    FileBuffer* buffer = malloc(sizeof(FileBuffer));
+    buffer->cache_size = 0;
+    buffer->cache = malloc(CACHE_MAX_SIZE);
+    buffer->file = fopen(file, "wb");
+    return buffer;
+}
+
+static void filebuffer_close(FileBuffer* buffer)
+{
+    if (buffer->cache_size > 0){
+        filebuffer_flush(buffer);
+    }
+    free(buffer->cache);
+    free(buffer);
+    buffer = NULL;
+}
+
+static void filebuffer_append(FileBuffer* buffer, char* data, size_t length)
+{
+    if (length >= CACHE_MAX_SIZE) {
+        filebuffer_flush(buffer);
+        DEBUG("File too big for cache. writing directly...");
+        fwrite(data, length, 1, buffer->file);
+        return;
+    }
+
+    if (buffer->cache_size + length >= CACHE_MAX_SIZE){
+        filebuffer_flush(buffer);
+    }
+}
+
+static void pack_create(FilePathList* list, const char* output_file)
+{
+    FileBuffer* buffer = filebuffer_open(output_file);
+    // write header
+    filebuffer_close(buffer);
+}
+
+DEFLATION int deflate_folder(const char* folder, const char* output_file)
 {
     FilePathList list = { 0 };
     crawl_folder(&list, folder);
