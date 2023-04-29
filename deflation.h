@@ -58,7 +58,7 @@ typedef struct FilePathList {
     size_t capacity;
 } FilePathList;
 
-#define CACHE_MAX_SIZE (10240)
+# define CACHE_MAX_SIZE (10240)
 typedef struct FileBuffer {
     size_t cache_size;
     char* cache;
@@ -72,12 +72,12 @@ void filepathlist_append(FilePathList* list, const char* folder)
 {
     if (list->files == NULL) {
         list->capacity = 500;
-        list->files = malloc(list->capacity*sizeof(const char*));
+        list->files = malloc(list->capacity * sizeof(const char*));
     }
 
     if (list->count == list->capacity) {
         list->capacity *= 2;
-        list->files = realloc(list->files, list->capacity*sizeof(const char*));
+        list->files = realloc(list->files, list->capacity * sizeof(const char*));
     }
 
     list->files[list->count++] = strdup(folder);
@@ -113,7 +113,7 @@ void crawl_folder(FilePathList* list, const char* folder)
         }
 
         // append folder with filename
-        char* merged_path = malloc(strlen(folder)+1+strlen(name)+1);
+        char* merged_path = malloc(strlen(folder) + 1 + strlen(name) + 1);
         sprintf(merged_path, "%s/%s", folder, name);
 
         crawl_folder(list, merged_path);
@@ -126,10 +126,10 @@ void crawl_folder(FilePathList* list, const char* folder)
 
 static void filebuffer_flush(FileBuffer* buffer)
 {
-    buffer->cache_size = 0;
-    fputs(buffer->cache, buffer->file);
     assert(buffer->cache_size < CACHE_MAX_SIZE);
     fwrite(buffer->cache, buffer->cache_size, 1, buffer->file);
+    DEBUG("Flushed filebuffer (%zu bytes)",buffer->cache_size);
+    buffer->cache_size = 0;
 }
 
 static FileBuffer* filebuffer_open(const char* file)
@@ -143,7 +143,7 @@ static FileBuffer* filebuffer_open(const char* file)
 
 static void filebuffer_close(FileBuffer* buffer)
 {
-    if (buffer->cache_size > 0){
+    if (buffer->cache_size > 0) {
         filebuffer_flush(buffer);
     }
     free(buffer->cache);
@@ -160,15 +160,19 @@ static void filebuffer_append(FileBuffer* buffer, char* data, size_t length)
         return;
     }
 
-    if (buffer->cache_size + length >= CACHE_MAX_SIZE){
+    if (buffer->cache_size + length >= CACHE_MAX_SIZE) {
         filebuffer_flush(buffer);
     }
+
+    char* offset = buffer->cache + buffer->cache_size;
+    memcpy(offset, data, length);
+    buffer->cache_size += length;
 }
 
-static void pack_create(FilePathList* list, const char* output_file)
+static void create_pack(FilePathList list, const char* output_file)
 {
     FileBuffer* buffer = filebuffer_open(output_file);
-    // write header
+
     filebuffer_close(buffer);
 }
 
@@ -186,6 +190,8 @@ DEFLATION int deflate_folder(const char* folder, const char* output_file)
         const char* file = list.files[i];
         INFO(file);
     }
+
+    create_pack(list, output_file);
 
     return SUCCESS;
 }
