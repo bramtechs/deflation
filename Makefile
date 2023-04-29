@@ -7,6 +7,9 @@ clean:
 check: deflate
 	./deflate example example.def
 
+check2: deflate
+	./deflate ~/dev/basalt/assets example.def
+
 install: deflate
 	cp deflate /usr/bin/deflate
 

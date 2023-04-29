@@ -63,11 +63,12 @@ void filepathlist_append(FilePathList* list, const char* folder)
 {
     if (list->files == NULL) {
         list->capacity = 2;
-        list->files = malloc(list->capacity);
+        list->files = malloc(list->capacity*sizeof(const char*));
     }
 
     if (list->count == list->capacity) {
         list->capacity *= 2;
+        list->files = realloc(list->files, list->capacity*sizeof(const char*));
     }
 
     list->files[list->count++] = strdup(folder);
@@ -103,7 +104,7 @@ void crawl_folder(FilePathList* list, const char* folder)
         }
 
         // append folder with filename
-        char* merged_path = malloc(strlen(folder)+1+strlen(name));
+        char* merged_path = malloc(strlen(folder)+1+strlen(name)+1);
         sprintf(merged_path, "%s/%s", folder, name);
 
         crawl_folder(list, merged_path);
