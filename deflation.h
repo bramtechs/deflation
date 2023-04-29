@@ -14,7 +14,7 @@
 typedef struct RawAsset {
     char path[MAX_PATH_LEN];
     int64_t size;
-    char data[];
+    char* data;
 } RawAsset;
 
 DEFLATION int deflate_folder(const char* folder, const char* output_file);  // NOTE: Deflates the given folder into an output package.
@@ -151,7 +151,7 @@ static void filebuffer_close(FileBuffer* buffer)
     buffer = NULL;
 }
 
-static void filebuffer_append(FileBuffer* buffer, char* data, size_t length)
+static void filebuffer_append(FileBuffer* buffer, void* data, size_t length)
 {
     if (length >= CACHE_MAX_SIZE) {
         filebuffer_flush(buffer);
@@ -169,9 +169,57 @@ static void filebuffer_append(FileBuffer* buffer, char* data, size_t length)
     buffer->cache_size += length;
 }
 
+static RawAsset rawasset_load(const char* name)
+{
+    RawAsset asset;
+    strcpy(asset.path, name); // TODO: unsafe 
+
+    FILE* file = fopen(name,"rb");
+    if (file == NULL) {
+        FATAL("Failed to read file %s", name);
+    }
+
+    fseek(file, 0, SEEK_END);
+    asset.size = (int64_t) ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    // load file content into memory
+    asset.data = malloc(asset.size);
+
+    int read = fread(asset.data, 1, asset.size, file);
+    if ((int64_t) read != asset.size){
+        FATAL("Failed to read some parts of file %s (%d/%zu)", name, read, asset.size);
+    }
+
+    return asset;
+}
+
+static void rawasset_free(RawAsset* asset)
+{
+    free(asset->data);
+    asset->data = NULL;
+}
+
+static void write_item(FileBuffer* buffer, RawAsset asset)
+{
+}
+
 static void create_pack(FilePathList list, const char* output_file)
 {
     FileBuffer* buffer = filebuffer_open(output_file);
+
+    // write header
+    int64_t amount = list.count;
+    filebuffer_append(buffer, &amount, amount);
+
+    // write every item
+    for (size_t i = 0; i < list.count; i++) {
+        const char* file = list.files[i];
+        RawAsset asset = rawasset_load(file);
+        write_item(buffer, asset);
+        DEBUG("Wrote %s into %s", file, output_file);
+        rawasset_free(&asset);
+    }
 
     filebuffer_close(buffer);
 }
@@ -182,13 +230,8 @@ DEFLATION int deflate_folder(const char* folder, const char* output_file)
     crawl_folder(&list, folder);
 
     if (list.count == 0) {
-        ERR("Deflation could not open input directory %s.", folder);
+        ERR("Deflation could not open input directory %s", folder);
         return FAILURE;
-    }
-
-    for (size_t i = 0; i < list.count; i++) {
-        const char* file = list.files[i];
-        INFO(file);
     }
 
     create_pack(list, output_file);
