@@ -102,8 +102,13 @@ void crawl_folder(FilePathList* list, const char* folder)
             continue;
         }
 
-        crawl_folder(list, name);
-        filepathlist_append(list, name);
+        // append folder with filename
+        char* merged_path = malloc(strlen(folder)+1+strlen(name));
+        sprintf(merged_path, "%s/%s", folder, name);
+
+        crawl_folder(list, merged_path);
+        filepathlist_append(list, merged_path);
+        free(merged_path);
     };
 
     closedir(dir);

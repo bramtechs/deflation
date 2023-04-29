@@ -23,6 +23,7 @@ int main(int argc, char** argv)
 
     const char* input_folder = argv[argc - 2];
     const char* output_file = argv[argc - 1];
+
     if (deflate_folder(input_folder, output_file)) {
         INFO("Deflated folder %s to %s.", input_folder, output_file);
         return EXIT_SUCCESS;
