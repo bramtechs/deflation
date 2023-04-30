@@ -200,8 +200,11 @@ static void rawasset_free(RawAsset* asset)
     asset->data = NULL;
 }
 
-static void write_item(FileBuffer* buffer, RawAsset asset)
+static void rawasset_write(FileBuffer* buffer, RawAsset asset)
 {
+     filebuffer_append(buffer, (void*) asset.path, MAX_PATH_LEN);
+     filebuffer_append(buffer, (void*) &asset.size, sizeof(int64_t));
+     filebuffer_append(buffer, (void*) asset.data, asset.size);
 }
 
 static void create_pack(FilePathList list, const char* output_file)
@@ -210,13 +213,13 @@ static void create_pack(FilePathList list, const char* output_file)
 
     // write header
     int64_t amount = list.count;
-    filebuffer_append(buffer, &amount, amount);
+    filebuffer_append(buffer, &amount, sizeof(int64_t));
 
     // write every item
     for (size_t i = 0; i < list.count; i++) {
         const char* file = list.files[i];
         RawAsset asset = rawasset_load(file);
-        write_item(buffer, asset);
+        rawasset_write(buffer, asset);
         DEBUG("Wrote %s into %s", file, output_file);
         rawasset_free(&asset);
     }
